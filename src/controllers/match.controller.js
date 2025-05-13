@@ -9,7 +9,7 @@ const findMatchesForTenant = async (req, res) => {
         }
 
         const tenantProperty = user.propertyId;
-        if (!tenantProperty || !tenantProperty.requirements?.guarantors) {
+        if (!tenantProperty) { // || !tenantProperty.requirements?.guarantors
             return res.status(404).json({ message: 'Tenant property or guarantees not found' });
         }
 
