@@ -4,14 +4,14 @@ const matchController = require('../controllers/match.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 
 router.get(
-    '/tenant/:tenantId',
+    '/tenant',
     authMiddleware,
-    matchController.getTenantMatches
+    matchController.findMatchesForTenant
 );
 router.post(
-    '/run',
+    '/landlord',
     authMiddleware,
-    matchController.matchPropertys
+    matchController.findMatchesForLandlord
 );
 
 module.exports = router;

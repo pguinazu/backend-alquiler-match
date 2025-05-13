@@ -27,13 +27,9 @@ const UsuarioSchema = new mongoose.Schema({
             type: String,
             required: true
         },
-        preferences: {
-            desirableAreas: [String],
-            propertyType: String,
-            desirablePrice: {
-                min: Number,
-                max: Number
-            },
+        propertyId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Property'
         }
     }, {
         timestamps: true
