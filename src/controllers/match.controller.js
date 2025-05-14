@@ -46,26 +46,28 @@ const findMatchesForLandlord = async (req, res) => {
             return res.status(403).json({ message: 'Only landlords can request matches' });
         }
 
-        const landlordProperty = user.propertyId;
+        const landlordProperty = (await Property.find({ owner: req.user._id })).at(0);
         if (!landlordProperty || !landlordProperty.requirements?.tenantRequirements) {
             return res.status(404).json({ message: 'Landlord property or requirements not found' });
         }
 
-        const r = landlordProperty.requirements.tenantRequirements;
+        const tenantRequirements = landlordProperty.requirements.tenantRequirements;
+        console.log('tenantRequirements', tenantRequirements);
+        
 
         const matches = await Property.find({
-            createdByType: 'tenant',
-            'requirements.guarantors.salaryGuarantee.seniorityYears': { $gte: r.salaryGuarantee.seniorityYears },
-            'requirements.guarantors.salaryGuarantee.minSalary': { $gte: r.salaryGuarantee.minSalary },
+            userType: 'tenant',
+            'requirements.guarantors.salaryGuarantee.seniorityYears': { $gte: tenantRequirements.salaryGuarantee.seniorityYears },
+            'requirements.guarantors.salaryGuarantee.minSalary': { $gte: tenantRequirements.salaryGuarantee.minSalary },
             'requirements.guarantors.salaryGuarantee.goodCreditHistory': {
-                $in: [true, r.salaryGuarantee.goodCreditHistory]
+                $in: [true, tenantRequirements.salaryGuarantee.goodCreditHistory]
             },
-            'requirements.guarantors.pets.quantity': { $lte: r.pets?.quantity || 0 },
-            'requirements.guarantors.pets.petType': {
-                $in: [r.pets?.petType || 'none', 'none']
+            'requirements.tenantRequirements.pets.quantity': { $lte: tenantRequirements.pets?.quantity || 0 },
+            'requirements.tenantRequirements.pets.petType': {
+                $in: [tenantRequirements.pets?.petType || 'none', 'none']
             },
-            'requirements.guarantors.pets.size': {
-                $in: [r.pets?.size || 'none', 'none']
+            'requirements.tenantRequirements.pets.size': {
+                $in: [tenantRequirements.pets?.size || 'none', 'none']
             }
         });
 
