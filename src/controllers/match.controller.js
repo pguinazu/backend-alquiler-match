@@ -4,30 +4,31 @@ const User = require('../models/user.model');
 const findMatchesForTenant = async (req, res) => {
     try {
         const user = await User.findById(req.user._id).populate('propertyId');
+        
         if (!user || user.userType !== 'tenant') {
             return res.status(403).json({ message: 'Only tenants can request matches' });
         }
 
-        const tenantProperty = user.propertyId;
-        if (!tenantProperty) { // || !tenantProperty.requirements?.guarantors
-            return res.status(404).json({ message: 'Tenant property or guarantees not found' });
+        const tenantProperty = (await Property.find({ owner: req.user._id })).at(0);
+        
+        if (!tenantProperty || !tenantProperty.requirements?.guarantors) {
+            return res.status(404).json({ message: 'Tenant property or guarantees not found d' });
         }
-
-        const g = tenantProperty.requirements.guarantors;
-
+        
+        const guarantorsObj = tenantProperty.requirements.guarantors;
+        const tenantRequirementsObj = tenantProperty.requirements.tenantRequirements;
+        
         const matches = await Property.find({
-            createdByType: 'landlord',
-            'requirements.tenantRequirements.salaryGuarantee.seniorityYears': { $lte: g.salaryGuarantee.seniorityYears },
-            'requirements.tenantRequirements.salaryGuarantee.minSalary': { $lte: g.salaryGuarantee.minSalary },
+            userType: 'landlord',
+            'requirements.tenantRequirements.salaryGuarantee.seniorityYears': { $lte: guarantorsObj.salaryGuarantee.seniorityYears },
+            'requirements.tenantRequirements.salaryGuarantee.minSalary': { $lte: guarantorsObj.salaryGuarantee.minSalary },
             'requirements.tenantRequirements.salaryGuarantee.goodCreditHistory': {
-                $in: [true, g.salaryGuarantee.goodCreditHistory]
+                $in: [true, guarantorsObj.salaryGuarantee.goodCreditHistory]
             },
-            'requirements.tenantRequirements.pets.quantity': { $gte: g.pets?.quantity || 0 },
-            'requirements.tenantRequirements.pets.petType': {
-                $in: [g.pets?.petType || 'none', 'none']
-            },
+            'requirements.tenantRequirements.pets.quantity': { $gte: guarantorsObj.pets?.quantity || 0 },
+            'requirements.tenantRequirements.pets.petType': { $eq: tenantRequirementsObj.pets?.petType || 'none' },
             'requirements.tenantRequirements.pets.size': {
-                $in: [g.pets?.size || 'none', 'none']
+                $in: [tenantRequirementsObj.pets?.size || 'none', 'none']
             }
         });
 
